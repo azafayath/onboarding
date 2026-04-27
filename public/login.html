@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onboarding Tool Login</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0d2145, #1b3a6b);
+      color: #fff;
+    }
+    .card {
+      width: min(420px, 92vw);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      padding: 28px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p { margin: 0 0 20px; color: #d8e3f5; font-size: 14px; }
+    label { display: block; margin: 10px 0 6px; font-size: 13px; font-weight: 700; }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #7f9dc5;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      margin-top: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #6ba83a;
+      color: #fff;
+      padding: 11px 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .msg { margin-top: 12px; min-height: 18px; color: #ffb3b3; font-size: 13px; }
+    .hint { margin-top: 14px; font-size: 12px; color: #bfd1ec; }
+  </style>
+</head>
+<body>
+  <form class="card" id="loginForm">
+    <h1>Onboarding Planning Tool</h1>
+    <p>Sign in to continue.</p>
+    <label for="username">Username</label>
+    <input id="username" name="username" required autocomplete="username">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required autocomplete="current-password">
+    <button type="submit">Login</button>
+    <div class="msg" id="msg"></div>
+    <div class="hint">Default admin: <code>admin</code> / <code>Admin@123</code></div>
+  </form>
+
+  <script>
+    async function checkSession() {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.user) window.location.href = "/planner.html";
+    }
+    checkSession();
+
+    document.getElementById("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.textContent = "";
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msg.textContent = data.error || "Login failed.";
+        return;
+      }
+      window.location.href = "/planner.html";
+    });
+  </script>
+</body>
+</html>
