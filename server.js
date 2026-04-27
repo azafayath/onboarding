@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('admin', 'user')),
   display_name TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS planner_profiles (
   user_id INTEGER PRIMARY KEY,
   responder_name TEXT DEFAULT '',
   responder_desig TEXT DEFAULT '',
+  responder_region TEXT DEFAULT '',
   responder_date TEXT DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -45,14 +47,32 @@ CREATE TABLE IF NOT EXISTS planner_selections (
 );
 `);
 
-const hasUsers = db.prepare("SELECT COUNT(*) AS c FROM users").get().c > 0;
-if (!hasUsers) {
-  const hash = bcrypt.hashSync("Admin@123", 10);
-  db.prepare(
-    "INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, 'admin', ?)"
-  ).run("admin", hash, "System Administrator");
-  console.log("Seeded default admin: username=admin, password=Admin@123");
+const profileColumns = db.prepare("PRAGMA table_info(planner_profiles)").all();
+const hasRegionColumn = profileColumns.some((c) => c.name === "responder_region");
+if (!hasRegionColumn) {
+  db.exec("ALTER TABLE planner_profiles ADD COLUMN responder_region TEXT DEFAULT ''");
 }
+const userColumns = db.prepare("PRAGMA table_info(users)").all();
+const hasIsActiveColumn = userColumns.some((c) => c.name === "is_active");
+if (!hasIsActiveColumn) {
+  db.exec("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1");
+}
+
+function ensureUser(username, password, role, displayName) {
+  const exists = db.prepare("SELECT id FROM users WHERE username = ?").get(username);
+  if (exists) return;
+  const hash = bcrypt.hashSync(password, 10);
+  db.prepare(
+    "INSERT INTO users (username, password_hash, role, display_name, is_active) VALUES (?, ?, ?, ?, 1)"
+  ).run(username, hash, role, displayName);
+}
+
+ensureUser("admin", "Admin@123", "admin", "System Administrator");
+ensureUser("admin_ops", "AdminOps@123", "admin", "Operations Admin");
+ensureUser("admin_hr", "AdminHr@123", "admin", "HR Admin");
+ensureUser("manager_north", "Manager@123", "user", "North Line Manager");
+ensureUser("manager_central", "Manager@123", "user", "Central Line Manager");
+ensureUser("manager_south", "Manager@123", "user", "South Line Manager");
 
 app.use(express.json({ limit: "1mb" }));
 app.use(
@@ -99,11 +119,14 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, username, password_hash, role, display_name FROM users WHERE username = ?")
+    .prepare("SELECT id, username, password_hash, role, display_name, is_active FROM users WHERE username = ?")
     .get(username.trim());
 
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: "Invalid credentials." });
+  }
+  if (!user.is_active) {
+    return res.status(403).json({ error: "This account is deactivated. Contact admin." });
   }
 
   req.session.user = {
@@ -127,8 +150,8 @@ app.get("/api/auth/me", (req, res) => {
 app.get("/api/planner", requireAuth, (req, res) => {
   const userId = req.session.user.id;
   const profile = db
-    .prepare("SELECT responder_name, responder_desig, responder_date FROM planner_profiles WHERE user_id = ?")
-    .get(userId) || { responder_name: "", responder_desig: "", responder_date: "" };
+    .prepare("SELECT responder_name, responder_desig, responder_region, responder_date FROM planner_profiles WHERE user_id = ?")
+    .get(userId) || { responder_name: "", responder_desig: "", responder_region: "", responder_date: "" };
 
   const rows = db
     .prepare("SELECT row_idx, delivery_point FROM planner_selections WHERE user_id = ?")
@@ -146,6 +169,7 @@ app.get("/api/planner", requireAuth, (req, res) => {
     profile: {
       name: profile.responder_name || "",
       desig: profile.responder_desig || "",
+      region: profile.responder_region || "",
       date: profile.responder_date || ""
     },
     selections
@@ -158,11 +182,12 @@ app.put("/api/planner", requireAuth, (req, res) => {
   const selections = req.body?.selections || {};
 
   const upsertProfile = db.prepare(`
-    INSERT INTO planner_profiles (user_id, responder_name, responder_desig, responder_date, updated_at)
-    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO planner_profiles (user_id, responder_name, responder_desig, responder_region, responder_date, updated_at)
+    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(user_id) DO UPDATE SET
       responder_name=excluded.responder_name,
       responder_desig=excluded.responder_desig,
+      responder_region=excluded.responder_region,
       responder_date=excluded.responder_date,
       updated_at=CURRENT_TIMESTAMP
   `);
@@ -177,6 +202,7 @@ app.put("/api/planner", requireAuth, (req, res) => {
       userId,
       String(profile.name || ""),
       String(profile.desig || ""),
+      String(profile.region || ""),
       String(profile.date || "")
     );
     deleteSelections.run(userId);
@@ -197,7 +223,7 @@ app.get("/api/report", requireAuth, requireAdmin, (req, res) => {
   const report = users.map((u) => {
     const profile =
       db
-        .prepare("SELECT responder_name, responder_desig, responder_date FROM planner_profiles WHERE user_id = ?")
+        .prepare("SELECT responder_name, responder_desig, responder_region, responder_date FROM planner_profiles WHERE user_id = ?")
         .get(u.id) || {};
     const rows = db
       .prepare("SELECT row_idx, delivery_point FROM planner_selections WHERE user_id = ?")
@@ -212,6 +238,7 @@ app.get("/api/report", requireAuth, requireAdmin, (req, res) => {
       profile: {
         name: profile.responder_name || "",
         desig: profile.responder_desig || "",
+        region: profile.responder_region || "",
         date: profile.responder_date || ""
       },
       selections: rows
@@ -232,12 +259,70 @@ app.post("/api/admin/users", requireAuth, requireAdmin, (req, res) => {
   const hash = bcrypt.hashSync(password, 10);
   try {
     const info = db
-      .prepare("INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)")
+      .prepare("INSERT INTO users (username, password_hash, role, display_name, is_active) VALUES (?, ?, ?, ?, 1)")
       .run(username.trim(), hash, role, displayName || username.trim());
     return res.status(201).json({ id: info.lastInsertRowid });
   } catch (error) {
     return res.status(409).json({ error: "User already exists." });
   }
+});
+
+app.get("/api/admin/users", requireAuth, requireAdmin, (req, res) => {
+  const users = db
+    .prepare(`
+      SELECT id, username, role, display_name, is_active, created_at
+      FROM users
+      ORDER BY id
+    `)
+    .all();
+  return res.json({ users });
+});
+
+app.patch("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const { displayName, role, isActive, password } = req.body || {};
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: "Invalid user id." });
+  }
+
+  const target = db.prepare("SELECT id, username, role FROM users WHERE id = ?").get(id);
+  if (!target) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  if (id === req.session.user.id && isActive === false) {
+    return res.status(400).json({ error: "You cannot deactivate your own account." });
+  }
+
+  if (role && !["admin", "user"].includes(role)) {
+    return res.status(400).json({ error: "role must be admin or user." });
+  }
+
+  const updates = [];
+  const params = [];
+  if (typeof displayName === "string") {
+    updates.push("display_name = ?");
+    params.push(displayName.trim() || target.username);
+  }
+  if (role) {
+    updates.push("role = ?");
+    params.push(role);
+  }
+  if (typeof isActive === "boolean") {
+    updates.push("is_active = ?");
+    params.push(isActive ? 1 : 0);
+  }
+  if (typeof password === "string" && password.trim()) {
+    updates.push("password_hash = ?");
+    params.push(bcrypt.hashSync(password.trim(), 10));
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: "No updates provided." });
+  }
+
+  params.push(id);
+  db.prepare(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`).run(...params);
+  return res.json({ ok: true });
 });
 
 app.listen(PORT, () => {

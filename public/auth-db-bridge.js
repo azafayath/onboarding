@@ -54,11 +54,10 @@
     byId("globalProg").appendChild(logoutBtn);
 
     if (currentUser.role === "user") {
-      document.querySelectorAll(".gp-summary-btn,.sidebar-summary-btn,.sh-export-btns,.sh-back-btn").forEach((el) => {
-        if (el.textContent && el.textContent.toLowerCase().includes("summary")) {
-          el.style.display = "none";
-        }
+      document.querySelectorAll("button[onclick*='showSummaryPage']").forEach((el) => {
+        el.style.display = "none";
       });
+      document.querySelectorAll(".sh-export-btns,.sh-back-btn").forEach((el) => (el.style.display = "none"));
       const summaryPage = byId("summaryPage");
       if (summaryPage) summaryPage.style.display = "none";
     } else {
@@ -68,6 +67,15 @@
       reportBtn.textContent = "Admin Report";
       reportBtn.onclick = showAdminReport;
       byId("globalProg").appendChild(reportBtn);
+
+      const usersBtn = document.createElement("button");
+      usersBtn.className = "gp-summary-btn";
+      usersBtn.style.marginLeft = "8px";
+      usersBtn.textContent = "Manage Users";
+      usersBtn.onclick = () => {
+        window.location.href = "/admin-users.html";
+      };
+      byId("globalProg").appendChild(usersBtn);
     }
   }
 
@@ -86,10 +94,15 @@
   }
 
   async function persistPlanner() {
+    const dateInput = byId("responderDate");
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().split("T")[0];
+    }
     const profile = {
       name: byId("responderName")?.value || "",
       desig: byId("responderDesig")?.value || "",
-      date: byId("responderDate")?.value || ""
+      region: byId("responderRegion")?.value || "",
+      date: byId("responderDate")?.value || new Date().toISOString().split("T")[0]
     };
     const selections = gatherSelections();
     await api("/api/planner", {
@@ -141,7 +154,10 @@
     const profile = data.profile || {};
     if (byId("responderName")) byId("responderName").value = profile.name || "";
     if (byId("responderDesig")) byId("responderDesig").value = profile.desig || "";
-    if (byId("responderDate")) byId("responderDate").value = profile.date || "";
+    if (byId("responderRegion")) byId("responderRegion").value = profile.region || "";
+    if (byId("responderDate")) {
+      byId("responderDate").value = profile.date || new Date().toISOString().split("T")[0];
+    }
 
     const selections = data.selections || {};
     Object.keys(selections).forEach((k) => {

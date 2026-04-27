@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin User Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f7fb; color: #0d1e33; }
+    .top { background: #0d2145; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .top a { color: #fff; text-decoration: none; font-weight: 700; }
+    .wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #d5e0ef; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    h1, h2 { margin: 0 0 12px; }
+    form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    input, select, button { padding: 9px 10px; border-radius: 8px; border: 1px solid #b7c7df; font-size: 14px; }
+    button { border: none; background: #1b3a6b; color: #fff; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #6b7f9f; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e3ebf7; padding: 10px 8px; text-align: left; font-size: 14px; }
+    th { font-size: 12px; text-transform: uppercase; color: #557096; letter-spacing: .4px; }
+    .actions { display: flex; gap: 8px; }
+    .msg { margin-top: 10px; font-size: 13px; color: #2f855a; min-height: 16px; }
+    .err { color: #c53030; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <strong>Admin User Management</strong>
+    <a href="/planner.html">Back to Planner</a>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Create User</h2>
+      <form id="createForm">
+        <input id="newUsername" placeholder="Username" required>
+        <input id="newDisplayName" placeholder="Display Name" required>
+        <input id="newPassword" placeholder="Password" type="password" required>
+        <select id="newRole">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button type="submit" style="grid-column: span 4;">Create User</button>
+      </form>
+      <div class="msg" id="createMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Users</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Username</th><th>Display Name</th><th>Role</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTbody"></tbody>
+      </table>
+      <div class="msg" id="listMsg"></div>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, options = {}) {
+      const res = await fetch(path, {
+        headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+        ...options
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Request failed");
+      return data;
+    }
+
+    async function ensureAdmin() {
+      const me = await api("/api/auth/me");
+      if (!me.user) return (window.location.href = "/login.html");
+      if (me.user.role !== "admin") return (window.location.href = "/planner.html");
+    }
+
+    function rowTemplate(u) {
+      const roleOptions = ["admin", "user"]
+        .map((r) => `<option value="${r}" ${u.role === r ? "selected" : ""}>${r}</option>`)
+        .join("");
+      return `
+        <tr>
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td><input id="dn_${u.id}" value="${(u.display_name || "").replaceAll('"', "&quot;")}"></td>
+          <td><select id="role_${u.id}">${roleOptions}</select></td>
+          <td>${u.is_active ? "Active" : "Inactive"}</td>
+          <td class="actions">
+            <button onclick="saveUser(${u.id})">Save</button>
+            <button class="secondary" onclick="toggleUser(${u.id}, ${u.is_active ? "false" : "true"})">${u.is_active ? "Deactivate" : "Activate"}</button>
+            <button class="secondary" onclick="resetPassword(${u.id})">Reset Password</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    async function loadUsers() {
+      const data = await api("/api/admin/users");
+      document.getElementById("usersTbody").innerHTML = data.users.map(rowTemplate).join("");
+    }
+
+    async function saveUser(id) {
+      const displayName = document.getElementById(`dn_${id}`).value.trim();
+      const role = document.getElementById(`role_${id}`).value;
+      await api(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ displayName, role })
+      });
+      document.getElementById("listMsg").textContent = "User updated.";
+      loadUsers();
+    }
+
+    async function toggleUser(id, isActive) {
+      await api(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive })
+      });
+      document.getElementById("listMsg").textContent = "User status updated.";
+      loadUsers();
+    }
+
+    async function resetPassword(id) {
+      const password = prompt("Enter new password:");
+      if (!password) return;
+      await api(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ password })
+      });
+      document.getElementById("listMsg").textContent = "Password reset successfully.";
+    }
+
+    document.getElementById("createForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("createMsg");
+      msg.className = "msg";
+      try {
+        await api("/api/admin/users", {
+          method: "POST",
+          body: JSON.stringify({
+            username: document.getElementById("newUsername").value.trim(),
+            displayName: document.getElementById("newDisplayName").value.trim(),
+            password: document.getElementById("newPassword").value,
+            role: document.getElementById("newRole").value
+          })
+        });
+        msg.textContent = "User created successfully.";
+        e.target.reset();
+        loadUsers();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.className = "msg err";
+      }
+    });
+
+    window.saveUser = saveUser;
+    window.toggleUser = toggleUser;
+    window.resetPassword = resetPassword;
+
+    (async function init() {
+      await ensureAdmin();
+      await loadUsers();
+    })();
+  </script>
+</body>
+</html>

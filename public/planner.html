@@ -290,8 +290,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
     <div class="hdr-right">
       <div class="responder-fields">
         <input class="hdr-input" id="responderName" type="text" placeholder="Line Manager Name" oninput="saveData()">
-        <input class="hdr-input" id="responderDesig" type="text" placeholder="Designation / Region" oninput="saveData()">
-        <input class="hdr-input" id="responderDate" type="date" oninput="saveData()">
+        <input class="hdr-input" id="responderDesig" type="text" placeholder="Designation" oninput="saveData()">
+        <input class="hdr-input" id="responderRegion" type="text" placeholder="Region" oninput="saveData()">
+        <input class="hdr-input" id="responderDate" type="date" readonly>
       </div>
       <div class="save-badge"><div class="save-dot"></div><span id="saveText">Auto-saving</span></div>
     </div>
@@ -2567,7 +2568,7 @@ function getSelections(){
 }
 
 function saveData(){
-  const data={sel:getSelections(),name:sel('responderName').value,desig:sel('responderDesig').value,date:sel('responderDate').value};
+  const data={sel:getSelections(),name:sel('responderName').value,desig:sel('responderDesig').value,region:sel('responderRegion')?.value||'',date:sel('responderDate').value};
   try{localStorage.setItem(SK,JSON.stringify(data));sel('saveText').textContent='Saved ✓';setTimeout(()=>sel('saveText').textContent='Auto-saving',2000);}catch(e){}
 }
 
@@ -2578,6 +2579,7 @@ function loadData(){
     const data=JSON.parse(raw);
     if(data.name)sel('responderName').value=data.name;
     if(data.desig)sel('responderDesig').value=data.desig;
+    if(data.region&&sel('responderRegion'))sel('responderRegion').value=data.region;
     if(data.date)sel('responderDate').value=data.date;
     if(data.sel){
       Object.entries(data.sel).forEach(([i,v])=>{
@@ -2698,12 +2700,14 @@ function buildSummary(){
   // Populate PDF responder info line
   const rName = sel('responderName').value;
   const rDesig = sel('responderDesig').value;
+  const rRegion = sel('responderRegion') ? sel('responderRegion').value : '';
   const rDate = sel('responderDate').value;
   const rInfo = sel('pdfResponderInfo');
   if(rInfo && (rName||rDesig||rDate)){
     const parts=[];
     if(rName)parts.push(rName);
     if(rDesig)parts.push(rDesig);
+    if(rRegion)parts.push(rRegion);
     if(rDate)parts.push(new Date(rDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}));
     rInfo.textContent=parts.join(' · ');
     rInfo.style.display='block';
