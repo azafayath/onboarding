@@ -121,45 +121,6 @@
       filter: brightness(1.1);
       transform: translateY(-1px);
     }
-    .divider {
-      margin: 16px 0;
-      text-align: center;
-      font-size: 12px;
-      color: #64748b;
-      position: relative;
-    }
-    .divider::before,
-    .divider::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      width: 36%;
-      height: 1px;
-      background: #e2e8f0;
-    }
-    .divider::before { left: 0; }
-    .divider::after { right: 0; }
-    .google-btn {
-      width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      background: #fff;
-      color: #475569;
-      padding: 10px 12px;
-      font-size: 14px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-    .google-icon {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: conic-gradient(#ea4335 0 25%, #fbbc05 25% 50%, #34a853 50% 75%, #4285f4 75% 100%);
-    }
     .msg {
       margin-top: 12px;
       min-height: 18px;
@@ -192,11 +153,6 @@
       <button type="button" class="toggle-password" id="togglePassword">Show</button>
     </div>
     <button class="submit-btn" type="submit">Sign in</button>
-    <div class="divider">or continue with</div>
-    <button class="google-btn" type="button">
-      <span class="google-icon" aria-hidden="true"></span>
-      Google
-    </button>
     <div class="msg" id="msg"></div>
   </form>
 
