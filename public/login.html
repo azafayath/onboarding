@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Onboarding Planning Portal</title>
   <link rel="icon" type="image/png" href="/fip-logo.png">
-  <link rel="preload" as="image" href="/fip-logo.png" type="image/png">
+  <link rel="preload" as="image" href="/fip-logo-login.png" type="image/png">
   <link rel="preload" as="image" href="/fip-wallpaper.jpg" type="image/jpeg">
   <style>
     :root {
@@ -48,6 +48,13 @@
     .logo-wrap img {
       width: auto;
       height: 96px;
+    }
+    .login-title {
+      margin: 10px 0 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.2px;
     }
     h1 {
       display: none;
@@ -165,7 +172,16 @@
 <body>
   <form class="card" id="loginForm">
     <div class="logo-wrap">
-      <img src="/fip-logo.png" alt="FIP logo">
+      <img
+        src="/fip-logo-login.png"
+        alt="FIP logo"
+        width="96"
+        height="96"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      >
+      <p class="login-title">Onboarding Planning</p>
     </div>
     <h1>Sign in</h1>
     <label for="username">Email</label>
