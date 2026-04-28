@@ -7,105 +7,186 @@
   <link rel="icon" type="image/png" href="/fip-logo.png">
   <style>
     :root {
-      --navy-1: #08162d;
-      --navy-2: #102c58;
-      --navy-3: #1d4f93;
-      --green-1: #6ba83a;
-      --green-2: #8dc63f;
-      --text-soft: #c9d7ee;
+      --blue-1: #15294c;
+      --blue-2: #274a7b;
+      --blue-3: #335d99;
+      --input-border: #d6dbe6;
+      --muted: #7b8397;
+      --text: #1d2433;
     }
     body {
       margin: 0;
       min-height: 100vh;
       display: grid;
       place-items: center;
-      font-family: "DM Sans", Arial, sans-serif;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
       background:
-        linear-gradient(rgba(8, 22, 45, 0.68), rgba(16, 44, 88, 0.74)),
+        linear-gradient(rgba(21, 41, 76, 0.77), rgba(39, 74, 123, 0.72)),
         url("/fip-wallpaper.jpg") center center / cover no-repeat fixed,
-        radial-gradient(ellipse 90% 80% at 80% 15%, rgba(141, 198, 63, 0.16) 0%, transparent 60%),
-        linear-gradient(145deg, var(--navy-1), var(--navy-2) 55%, var(--navy-3));
-      color: #fff;
+        radial-gradient(ellipse 90% 80% at 80% 15%, rgba(87, 125, 186, 0.25) 0%, transparent 60%),
+        linear-gradient(145deg, var(--blue-1), var(--blue-2) 55%, var(--blue-3));
+      color: var(--text);
+      overflow: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(55% 45% at 15% 70%, rgba(81, 180, 203, 0.22) 0%, transparent 70%),
+        radial-gradient(65% 50% at 80% 35%, rgba(122, 161, 219, 0.20) 0%, transparent 72%);
+      pointer-events: none;
     }
     .card {
-      width: min(460px, 92vw);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.06));
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 18px;
-      padding: 30px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      position: relative;
+      z-index: 1;
+      width: min(390px, 92vw);
+      background: #f7f8fb;
+      border: 1px solid rgba(24, 48, 90, 0.1);
+      border-radius: 12px;
+      padding: 26px 18px 18px;
+      box-shadow: 0 20px 36px rgba(6, 13, 28, 0.3);
     }
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid rgba(141, 198, 63, 0.35);
-      color: #d8efb7;
-      background: rgba(141, 198, 63, 0.14);
-      border-radius: 999px;
-      font-size: 11px;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      font-weight: 700;
-      padding: 6px 12px;
-      margin-bottom: 14px;
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 12px;
     }
-    h1 { margin: 0 0 8px; font-size: 29px; line-height: 1.15; }
-    p { margin: 0 0 24px; color: var(--text-soft); font-size: 14px; }
+    .logo-wrap img {
+      width: 82px;
+      height: auto;
+    }
+    h1 {
+      display: none;
+    }
     label {
       display: block;
-      margin: 10px 0 6px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      color: #d7e4f8;
+      margin: 11px 0 6px;
+      font-size: 11px;
+      color: #2a3347;
+      font-weight: 500;
     }
     input {
       width: 100%;
       box-sizing: border-box;
-      border: 1px solid rgba(163, 188, 226, 0.45);
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
-      padding: 11px 12px;
-      font-size: 14px;
+      border: 1px solid var(--input-border);
+      background: #fff;
+      border-radius: 4px;
+      padding: 9px 10px;
+      font-size: 12px;
       outline: none;
+      color: #1e2638;
     }
+    input::placeholder { color: #a2a8b8; }
     input:focus {
-      border-color: var(--green-2);
-      box-shadow: 0 0 0 3px rgba(141, 198, 63, 0.2);
+      border-color: #7a90ba;
+      box-shadow: 0 0 0 2px rgba(122, 144, 186, 0.14);
     }
-    button {
-      width: 100%;
-      margin-top: 16px;
+    .password-wrap {
+      position: relative;
+    }
+    .password-wrap input {
+      padding-right: 48px;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
       border: none;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--green-1), var(--green-2));
-      color: #fff;
-      padding: 11px 12px;
-      font-size: 14px;
-      font-weight: 700;
+      background: transparent;
+      color: #4e5d7e;
+      font-size: 11px;
       cursor: pointer;
-      letter-spacing: 0.3px;
+      padding: 0;
+      width: auto;
+      margin: 0;
+      font-weight: 500;
+    }
+    .submit-btn {
+      width: 100%;
+      margin-top: 14px;
+      border: none;
+      border-radius: 4px;
+      background: #091735;
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.1px;
       transition: transform 0.15s ease, filter 0.15s ease;
     }
-    button:hover {
-      filter: brightness(1.06);
+    .submit-btn:hover {
+      filter: brightness(1.1);
       transform: translateY(-1px);
     }
-    .msg { margin-top: 12px; min-height: 18px; color: #ffb3b3; font-size: 13px; }
+    .divider {
+      margin: 12px 0;
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      position: relative;
+    }
+    .divider::before,
+    .divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 36%;
+      height: 1px;
+      background: #e3e7f0;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+    .google-btn {
+      width: 100%;
+      border: 1px solid #d8ddea;
+      border-radius: 4px;
+      background: #fff;
+      color: #47506a;
+      padding: 9px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .google-icon {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: conic-gradient(#ea4335 0 25%, #fbbc05 25% 50%, #34a853 50% 75%, #4285f4 75% 100%);
+    }
+    .msg {
+      margin-top: 10px;
+      min-height: 16px;
+      color: #bb2438;
+      font-size: 12px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <form class="card" id="loginForm">
-    <span class="brand">FIP x Almarai</span>
-    <h1>Onboarding Planning Portal</h1>
-    <p>Secure login for managers and administrators.</p>
-    <label for="username">Username</label>
-    <input id="username" name="username" required autocomplete="username">
+    <div class="logo-wrap">
+      <img src="/fip-logo.png" alt="FIP logo">
+    </div>
+    <h1>Sign in</h1>
+    <label for="username">Email</label>
+    <input id="username" name="username" type="email" required autocomplete="username" placeholder="Enter your email">
     <label for="password">Password</label>
-    <input id="password" name="password" type="password" required autocomplete="current-password">
-    <button type="submit">Login</button>
+    <div class="password-wrap">
+      <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Enter your password">
+      <button type="button" class="toggle-password" id="togglePassword">Show</button>
+    </div>
+    <button class="submit-btn" type="submit">Sign in</button>
+    <div class="divider">or continue with</div>
+    <button class="google-btn" type="button">
+      <span class="google-icon" aria-hidden="true"></span>
+      Google
+    </button>
     <div class="msg" id="msg"></div>
   </form>
 
@@ -116,6 +197,14 @@
       if (data.user) window.location.href = "/planner.html";
     }
     checkSession();
+
+    document.getElementById("togglePassword").addEventListener("click", () => {
+      const password = document.getElementById("password");
+      const toggle = document.getElementById("togglePassword");
+      const isHidden = password.type === "password";
+      password.type = isHidden ? "text" : "password";
+      toggle.textContent = isHidden ? "Hide" : "Show";
+    });
 
     document.getElementById("loginForm").addEventListener("submit", async (event) => {
       event.preventDefault();
