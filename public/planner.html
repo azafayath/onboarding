@@ -2545,18 +2545,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
     </div>
   </div>
 
-  <!-- HOW TO SHARE NOTE -->
-  <div class="no-print" style="background:#F0F7E8;border-left:4px solid #6BA83A;padding:14px 44px;display:flex;align-items:center;gap:14px;font-size:12px;color:#2D5016;">
-    <span style="font-size:20px;">📤</span>
-    <span><strong style="color:#1B3A6B;">To save as PDF:</strong> Click <strong>Save as PDF</strong> above → the browser print dialog will open → set <strong>Destination</strong> to <strong>Save as PDF</strong> → click <strong>Save</strong>. Then share the PDF file with your FIP Team.</span>
-  </div>
 
   <div class="summary-body">
     <div class="unassigned-alert" id="unassignedAlert"></div>
 
-    <!-- Phase breakdown cards -->
-    <div class="section-title">📊 Phase-by-Phase Breakdown</div>
-    <div class="phase-breakdown-grid" id="phaseBreakdownGrid"></div>
 
     <!-- Full detail table -->
     <div class="print-only">
@@ -2973,46 +2965,6 @@ function downloadPDF() {
         doc.setFontSize(7.5);
         doc.setTextColor(180, 205, 225);
         doc.text(k.sub, x + 4, y + 22);
-      });
-      y += 30;
-
-      // ── Phase Breakdown ──
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(13, 33, 69);
-      doc.text('Phase-by-Phase Breakdown', MARGIN, y);
-      y += 2;
-      doc.setDrawColor(107, 168, 58);
-      doc.setLineWidth(0.5);
-      doc.line(MARGIN, y, PW - MARGIN, y);
-      y += 4;
-
-      var phaseRows = PHASES_DATA.map(function(pd) {
-        var pF = 0, pA = 0, pFl = 0;
-        pd.rows.forEach(function(pair) {
-          var v = sels[pair[0]];
-          if (v) { if (v === 'FIP') pF += pair[1]; else if (v === 'Almarai') pA += pair[1]; else pFl += pair[1]; }
-        });
-        var pt = pF + pA + pFl;
-        return [pd.name, pF + ' hrs', pA + ' hrs', pFl + ' hrs', pt + ' hrs'];
-      });
-
-      doc.autoTable({
-        startY: y,
-        head: [['Phase', 'At FIP', 'At Almarai', 'Field Training', 'Phase Total']],
-        body: phaseRows,
-        theme: 'grid',
-        headStyles: { fillColor: [27,58,107], textColor: 255, fontSize: 8.5, fontStyle: 'bold', halign: 'center' },
-        bodyStyles: { fontSize: 8.5, textColor: [13,33,69] },
-        alternateRowStyles: { fillColor: [240,247,251] },
-        columnStyles: {
-          0: { fontStyle: 'bold' },
-          1: { halign: 'center', textColor: [74,144,196] },
-          2: { halign: 'center', textColor: [27,58,107] },
-          3: { halign: 'center', textColor: [194,124,10] },
-          4: { halign: 'center', fontStyle: 'bold', textColor: [13,33,69] }
-        },
-        margin: { left: MARGIN, right: MARGIN }
       });
 
       // Page 1 footer
