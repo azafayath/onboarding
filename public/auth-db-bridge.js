@@ -63,13 +63,9 @@
     };
     byId("globalProg").appendChild(logoutBtn);
 
-    if (currentUser.role === "user") {
-      document.querySelectorAll("button[onclick*='showSummaryPage']").forEach((el) => {
-        el.style.display = "none";
-      });
-      document.querySelectorAll(".sh-export-btns,.sh-back-btn").forEach((el) => (el.style.display = "none"));
-      const summaryPage = byId("summaryPage");
-      if (summaryPage) summaryPage.style.display = "none";
+    if (currentUser.role !== "admin") {
+      // non-admin: summary page is allowed, but hide admin-only controls
+      document.querySelectorAll(".sh-export-btns .admin-only").forEach((el) => (el.style.display = "none"));
     } else {
       const reportBtn = document.createElement("button");
       reportBtn.className = "gp-summary-btn";
@@ -157,14 +153,9 @@
     debouncedSave();
   };
   window.showSummaryPage = function () {
-    if (currentUser?.role !== "admin") {
-      alert("Only admin can access full report summary.");
-      return;
-    }
     ORIGINAL_SHOW_SUMMARY();
   };
   window.buildSummary = function () {
-    if (currentUser?.role !== "admin") return;
     ORIGINAL_BUILD_SUMMARY();
   };
 
