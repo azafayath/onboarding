@@ -247,13 +247,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
   .print-only{display:none!important;}
 }
 @media print{
-  .sidebar,.global-prog,.instr-banner,.phase-footer,.nav-btn,.gp-summary-btn,
-  .sh-back-btn,.sh-export-btns,.summary-page .sh-top button{display:none!important;}
+  /* Hide everything, then show only the summary page */
+  body > *{display:none!important;}
+  #summaryPage{display:block!important;}
+  /* Hide UI controls within the summary */
+  #summaryPage .sh-back-btn,
+  #summaryPage .sh-export-btns,
+  #summaryPage .warn-bar{display:none!important;}
+  /* Show the print-only detail table */
   .print-only{display:block!important;}
-  .summary-page{display:block!important;}
-  .summary-hero{background:#1B3A6B!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .dist-strip{background:#0D2145!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .kpi-card{background:rgba(255,255,255,0.1)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  /* Preserve colours */
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .summary-hero{background:linear-gradient(160deg,#0D2145,#1B3A6B)!important;}
+  .dist-strip{background:#0D2145!important;}
+  .kpi-card{background:rgba(255,255,255,0.08)!important;}
   body{font-size:12px;}
   .full-table tbody td{padding:7px 12px;}
   .summary-body{padding:20px;}
