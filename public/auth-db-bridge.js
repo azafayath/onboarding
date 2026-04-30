@@ -32,6 +32,7 @@
       return false;
     }
     currentUser = me.user;
+    window.currentUser = me.user;
     return true;
   }
 

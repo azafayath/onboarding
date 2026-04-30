@@ -2859,13 +2859,24 @@ window.addEventListener('load',()=>{
 </script>
 
 <script>
+// ─── FIP Logo preload for PDF ───
+var _fipLogo = null;
+(function() {
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      _fipLogo = { dataURL: c.toDataURL('image/png'), nw: img.naturalWidth, nh: img.naturalHeight };
+    } catch(e) {}
+  };
+  img.src = '/fip-logo-login.png';
+})();
+
 // ─── PDF DOWNLOAD (jsPDF) ───
 function downloadPDF() {
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    // Library not loaded yet — fall back to print dialog
-    window.print();
-    return;
-  }
+  if (!window.jspdf || !window.jspdf.jsPDF) { window.print(); return; }
 
   const btn = document.getElementById('downloadPdfBtn');
   if (btn) { btn.textContent = '⏳ Generating…'; btn.disabled = true; }
@@ -2874,7 +2885,8 @@ function downloadPDF() {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('l', 'mm', 'a4');
-      const PW = 297, MARGIN = 14, CW = PW - MARGIN * 2;
+      const PW = 297, PH = 210, MARGIN = 14, CW = PW - MARGIN * 2;
+      const isAdmin = window.currentUser && window.currentUser.role === 'admin';
 
       // ── Gather data ──
       const sels = getSelections();
@@ -2890,69 +2902,92 @@ function downloadPDF() {
       const date   = (document.getElementById('responderDate')  || {}).value || '';
       const dateStr = date ? new Date(date).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '';
       const respInfo = [name, desig, region, dateStr].filter(Boolean).join('  ·  ');
+      const todayStr = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 
       // ── PAGE 1: SUMMARY ──
-      // Header bar
+      const HDR_H = 30;
+
+      // Navy header bar
       doc.setFillColor(13, 33, 69);
-      doc.rect(0, 0, PW, 26, 'F');
+      doc.rect(0, 0, PW, HDR_H, 'F');
+
+      // FIP Logo (left side of header)
+      let textStartX = MARGIN;
+      if (_fipLogo && _fipLogo.nh > 0) {
+        const logoH = 18, logoW = logoH * (_fipLogo.nw / _fipLogo.nh);
+        doc.addImage(_fipLogo.dataURL, 'PNG', MARGIN, (HDR_H - logoH) / 2, logoW, logoH);
+        textStartX = MARGIN + logoW + 6;
+      }
+
+      // Title text (right of logo)
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('FIP Sales Program — Onboarding Planning Report', MARGIN, 11);
+      doc.setFontSize(13);
+      doc.text('FIP Sales Program', textStartX, 11);
+      doc.setFontSize(10);
+      doc.text('Onboarding Planning Report', textStartX, 19);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(141, 198, 63);
-      doc.text('FIP × Almarai Partnership Program', MARGIN, 18);
+      doc.text('FIP × Almarai Partnership Program', textStartX, 26);
+
+      // Responder info (right-aligned, bottom of header)
       if (respInfo) {
         doc.setTextColor(200, 215, 230);
-        doc.text(respInfo, PW - MARGIN, 18, { align: 'right' });
+        doc.setFontSize(7.5);
+        doc.text(respInfo, PW - MARGIN, 26, { align: 'right' });
       }
-      doc.setFillColor(107, 168, 58);
-      doc.rect(0, 26, PW, 2, 'F');
 
-      // KPI boxes
-      var y = 36;
+      // Green accent stripe
+      doc.setFillColor(107, 168, 58);
+      doc.rect(0, HDR_H, PW, 2, 'F');
+
+      // ── KPI Boxes ──
+      var y = HDR_H + 10;
       var kpiW = (CW - 6) / 4;
       var kpis = [
-        { label: 'TOTAL PROGRAM',    val: totalH + ' CTH', sub: (totalH / HPD).toFixed(1) + ' days · ' + assigned + '/73 topics' },
-        { label: 'AT FIP',           val: fipH  + ' CTH', sub: (fipH  / HPD).toFixed(1) + ' days · ' + (totalH > 0 ? Math.round(fipH /totalH*100) : 0) + '%' },
-        { label: 'AT ALMARAI',       val: almH  + ' CTH', sub: (almH  / HPD).toFixed(1) + ' days · ' + (totalH > 0 ? Math.round(almH /totalH*100) : 0) + '%' },
-        { label: 'FIELD TRAINING',   val: fldH  + ' CTH', sub: (fldH  / HPD).toFixed(1) + ' days · ' + (totalH > 0 ? Math.round(fldH /totalH*100) : 0) + '%' }
+        { label: 'TOTAL PROGRAM',  val: totalH + ' CTH', sub: (totalH / HPD).toFixed(1) + ' days  ·  ' + assigned + ' / 73 topics' },
+        { label: 'AT FIP',         val: fipH   + ' CTH', sub: (fipH   / HPD).toFixed(1) + ' days  ·  ' + (totalH > 0 ? Math.round(fipH  / totalH * 100) : 0) + '%' },
+        { label: 'AT ALMARAI',     val: almH   + ' CTH', sub: (almH   / HPD).toFixed(1) + ' days  ·  ' + (totalH > 0 ? Math.round(almH  / totalH * 100) : 0) + '%' },
+        { label: 'FIELD TRAINING', val: fldH   + ' CTH', sub: (fldH   / HPD).toFixed(1) + ' days  ·  ' + (totalH > 0 ? Math.round(fldH  / totalH * 100) : 0) + '%' }
       ];
       kpis.forEach(function(k, i) {
         var x = MARGIN + i * (kpiW + 2);
         doc.setFillColor(27, 58, 107);
-        doc.roundedRect(x, y, kpiW, 22, 2, 2, 'F');
+        doc.roundedRect(x, y, kpiW, 24, 2, 2, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(6.5);
         doc.setTextColor(141, 198, 63);
-        doc.text(k.label, x + 4, y + 6);
-        doc.setFontSize(14);
+        doc.text(k.label, x + 4, y + 7);
+        doc.setFontSize(15);
         doc.setTextColor(255, 255, 255);
-        doc.text(k.val, x + 4, y + 15);
+        doc.text(k.val, x + 4, y + 16);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
         doc.setTextColor(180, 205, 225);
-        doc.text(k.sub, x + 4, y + 21);
+        doc.text(k.sub, x + 4, y + 22);
       });
       y += 30;
 
-      // Phase breakdown table
+      // ── Phase Breakdown ──
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setTextColor(13, 33, 69);
       doc.text('Phase-by-Phase Breakdown', MARGIN, y);
       y += 2;
       doc.setDrawColor(107, 168, 58);
       doc.setLineWidth(0.5);
       doc.line(MARGIN, y, PW - MARGIN, y);
-      y += 3;
+      y += 4;
 
       var phaseRows = PHASES_DATA.map(function(pd) {
         var pF = 0, pA = 0, pFl = 0;
-        pd.rows.forEach(function(pair) { var v = sels[pair[0]]; if (v) { if (v==='FIP') pF+=pair[1]; else if (v==='Almarai') pA+=pair[1]; else pFl+=pair[1]; } });
+        pd.rows.forEach(function(pair) {
+          var v = sels[pair[0]];
+          if (v) { if (v === 'FIP') pF += pair[1]; else if (v === 'Almarai') pA += pair[1]; else pFl += pair[1]; }
+        });
         var pt = pF + pA + pFl;
-        return [pd.name, pF+' hrs', pA+' hrs', pFl+' hrs', pt+' hrs'];
+        return [pd.name, pF + ' hrs', pA + ' hrs', pFl + ' hrs', pt + ' hrs'];
       });
 
       doc.autoTable({
@@ -2973,50 +3008,79 @@ function downloadPDF() {
         margin: { left: MARGIN, right: MARGIN }
       });
 
-      // ── PAGE 2: FULL DETAIL TABLE ──
-      doc.addPage();
-      doc.setFillColor(13, 33, 69);
-      doc.rect(0, 0, PW, 20, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Detailed Topic Assignment', MARGIN, 13);
-      doc.setFillColor(107, 168, 58);
-      doc.rect(0, 20, PW, 1.5, 'F');
+      // Page 1 footer
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(150, 160, 180);
+      doc.text('Generated: ' + todayStr, MARGIN, PH - 6);
+      if (isAdmin) doc.text('Page 1 of 2', PW / 2, PH - 6, { align: 'center' });
+      doc.text('FIP × Almarai Onboarding Program', PW - MARGIN, PH - 6, { align: 'right' });
 
-      var detailRows = ROWS.map(function(r) {
-        var v = sels[r.idx] || 'Unassigned';
-        return [r.phase_name, r.topic, r.sub, v, r.cth > 0 ? r.cth + ' hrs' : '—'];
-      });
+      // ── PAGE 2: FULL DETAIL TABLE (admin only) ──
+      if (isAdmin) {
+        doc.addPage();
 
-      doc.autoTable({
-        startY: 26,
-        head: [['Phase', 'Main Topic', 'Sub Topic', 'Delivery Point', 'CTH']],
-        body: detailRows,
-        theme: 'striped',
-        headStyles: { fillColor: [27,58,107], textColor: 255, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8, textColor: [13,33,69] },
-        alternateRowStyles: { fillColor: [244,247,251] },
-        columnStyles: {
-          0: { cellWidth: 34 },
-          1: { cellWidth: 44 },
-          2: { cellWidth: 'auto' },
-          3: { cellWidth: 34, halign: 'center', fontStyle: 'bold' },
-          4: { cellWidth: 18, halign: 'center', fontStyle: 'bold' }
-        },
-        didParseCell: function(data) {
-          if (data.section === 'body' && data.column.index === 3) {
-            var dp = data.cell.raw;
-            if (dp === 'FIP')           data.cell.styles.textColor = [74,144,196];
-            else if (dp === 'Almarai')  data.cell.styles.textColor = [27,58,107];
-            else if (dp === 'Field Training') data.cell.styles.textColor = [194,124,10];
-            else                        data.cell.styles.textColor = [148,160,188];
-          }
-        },
-        margin: { left: MARGIN, right: MARGIN }
-      });
+        // Header bar
+        doc.setFillColor(13, 33, 69);
+        doc.rect(0, 0, PW, 24, 'F');
 
-      // Save
+        // FIP Logo on page 2
+        let p2TextX = MARGIN;
+        if (_fipLogo && _fipLogo.nh > 0) {
+          const logoH = 14, logoW = logoH * (_fipLogo.nw / _fipLogo.nh);
+          doc.addImage(_fipLogo.dataURL, 'PNG', MARGIN, 5, logoW, logoH);
+          p2TextX = MARGIN + logoW + 5;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Detailed Topic Assignment', p2TextX, 14);
+        doc.setFillColor(107, 168, 58);
+        doc.rect(0, 24, PW, 1.5, 'F');
+
+        var detailRows = ROWS.map(function(r) {
+          var v = sels[r.idx] || 'Unassigned';
+          return [r.phase_name, r.topic, r.sub, v, r.cth > 0 ? r.cth + ' hrs' : '—'];
+        });
+
+        doc.autoTable({
+          startY: 30,
+          head: [['Phase', 'Main Topic', 'Sub Topic', 'Delivery Point', 'CTH']],
+          body: detailRows,
+          theme: 'striped',
+          headStyles: { fillColor: [27,58,107], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+          bodyStyles: { fontSize: 8, textColor: [13,33,69] },
+          alternateRowStyles: { fillColor: [244,247,251] },
+          columnStyles: {
+            0: { cellWidth: 34 },
+            1: { cellWidth: 44 },
+            2: { cellWidth: 'auto' },
+            3: { cellWidth: 34, halign: 'center', fontStyle: 'bold' },
+            4: { cellWidth: 18, halign: 'center', fontStyle: 'bold' }
+          },
+          didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index === 3) {
+              var dp = data.cell.raw;
+              if (dp === 'FIP')                data.cell.styles.textColor = [74,144,196];
+              else if (dp === 'Almarai')        data.cell.styles.textColor = [27,58,107];
+              else if (dp === 'Field Training') data.cell.styles.textColor = [194,124,10];
+              else                              data.cell.styles.textColor = [148,160,188];
+            }
+          },
+          margin: { left: MARGIN, right: MARGIN }
+        });
+
+        // Page 2 footer
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(150, 160, 180);
+        doc.text('Generated: ' + todayStr, MARGIN, PH - 6);
+        doc.text('Page 2 of 2', PW / 2, PH - 6, { align: 'center' });
+        doc.text('FIP × Almarai Onboarding Program', PW - MARGIN, PH - 6, { align: 'right' });
+      }
+
+      // ── Save ──
       doc.save('FIP_Almarai_Onboarding_' + new Date().toISOString().split('T')[0] + '.pdf');
 
     } catch(e) {
