@@ -68,11 +68,11 @@ function ensureUser(username, password, role, displayName) {
 }
 
 ensureUser("admin", "Admin@123", "admin", "System Administrator");
-ensureUser("admin_ops", "AdminOps@123", "admin", "Operations Admin");
-ensureUser("admin_hr", "AdminHr@123", "admin", "HR Admin");
-ensureUser("manager_north", "Manager@123", "user", "North Line Manager");
-ensureUser("manager_central", "Manager@123", "user", "Central Line Manager");
-ensureUser("manager_south", "Manager@123", "user", "South Line Manager");
+
+// Remove seed accounts that are no longer needed
+db.prepare(
+  "DELETE FROM users WHERE username IN ('admin_ops','admin_hr','manager_north','manager_central','manager_south')"
+).run();
 
 app.use(express.json({ limit: "1mb" }));
 app.use(
