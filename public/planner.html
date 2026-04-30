@@ -2885,6 +2885,10 @@ function doReset() {
   saveData();
   updateGlobal();
   PHASES_DATA.forEach(p => updatePhaseProgress(p.id));
+  // If summary page is open, rebuild it immediately so it reflects the cleared state
+  if (sel('summaryPage') && sel('summaryPage').classList.contains('active')) {
+    buildSummary();
+  }
 }
 </script>
 <script src="/auth-db-bridge.js"></script>
