@@ -2790,43 +2790,25 @@ function buildSummary(){
 }
 
 function exportCSV(){
-  // Always rebuild the summary first so the table reflects the current DOM state
-  buildSummary();
+  // Force a fresh summary build so getSelections reads the latest DOM state
+  try { buildSummary(); } catch(e) {}
 
-  // Read directly from the rendered detail table — identical source to the PDF
+  const sels = getSelections();
   let csv = 'Phase,Main Topic,Sub Topic,Delivery Point,CTH (hrs)\n';
-  const tbody = document.getElementById('fullDetailBody');
-  if (tbody) {
-    Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
-      // Skip phase-header rows (colspan) and the total row
-      if (tr.classList.contains('phase-row') || tr.classList.contains('total-row')) return;
-      const cells = tr.querySelectorAll('td');
-      if (cells.length < 5) return;
-      const phase = cells[0].textContent.trim();
-      const topic = cells[1].textContent.trim();
-      const sub   = cells[2].textContent.trim();
-      const dp    = (cells[3].querySelector('.dp-badge') || cells[3]).textContent.trim() || 'Unassigned';
-      const cth   = cells[4].textContent.trim().replace(' hrs','').replace('—','0');
-      csv += '"'+phase.replace(/"/g,'""')+'","'+topic.replace(/"/g,'""')+'","'+sub.replace(/"/g,'""')+'","'+dp+'",'+cth+'\n';
-    });
-  } else {
-    // Fallback: read from live radio buttons
-    const sels = getSelections();
-    ROWS.forEach(r => {
-      const v = sels[r.idx] || 'Unassigned';
-      csv += '"'+r.phase_name+'","'+r.topic+'","'+r.sub+'","'+v+'",'+r.cth+'\n';
-    });
-  }
+  ROWS.forEach(function(r){
+    const v = sels[r.idx] || 'Unassigned';
+    csv += '"'+r.phase_name+'","'+r.topic+'","'+r.sub+'","'+v+'",'+r.cth+'\n';
+  });
 
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const blob = new Blob([csv], {type:'text/csv'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = 'FIP_Onboarding_Plan_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.setAttribute('download', 'FIP_Onboarding_Plan_'+new Date().toISOString().split('T')[0]+'.csv');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
 }
 
 // Apply saved row highlights on load
