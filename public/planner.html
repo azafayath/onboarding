@@ -2901,7 +2901,15 @@ function downloadPDF() {
       const region = (document.getElementById('responderRegion')|| {}).value || '';
       const date   = (document.getElementById('responderDate')  || {}).value || '';
       const dateStr = date ? new Date(date).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '';
-      const respInfo = [name, desig, region, dateStr].filter(Boolean).join('  ·  ');
+      const respLine1Parts = [];
+      if (name)  respLine1Parts.push('Name: ' + name);
+      if (desig) respLine1Parts.push('Designation: ' + desig);
+      const respLine1 = respLine1Parts.join('  ·  ');
+
+      const respLine2Parts = [];
+      if (region)  respLine2Parts.push('Region: ' + region);
+      if (dateStr) respLine2Parts.push('Date: ' + dateStr);
+      const respLine2 = respLine2Parts.join('  ·  ');
       const todayStr = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 
       // ── PAGE 1: SUMMARY ──
@@ -2931,12 +2939,11 @@ function downloadPDF() {
       doc.setTextColor(141, 198, 63);
       doc.text('FIP × Almarai Partnership Program', textStartX, 26);
 
-      // Responder info (right-aligned, bottom of header)
-      if (respInfo) {
-        doc.setTextColor(200, 215, 230);
-        doc.setFontSize(7.5);
-        doc.text(respInfo, PW - MARGIN, 26, { align: 'right' });
-      }
+      // Responder info (right-aligned, two lines)
+      doc.setTextColor(200, 215, 230);
+      doc.setFontSize(7.5);
+      if (respLine1) doc.text(respLine1, PW - MARGIN, 19, { align: 'right' });
+      if (respLine2) doc.text(respLine2, PW - MARGIN, 26, { align: 'right' });
 
       // Green accent stripe
       doc.setFillColor(107, 168, 58);
