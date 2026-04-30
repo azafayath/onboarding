@@ -253,10 +253,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
   body > *{display:none!important;}
   #summaryPage{display:block!important;}
 
-  /* Hide interactive UI controls */
+  /* Hide interactive UI controls and instructional text */
   #summaryPage .sh-back-btn,
   #summaryPage .sh-export-btns,
   #summaryPage .warn-bar,
+  .no-print,
   .instr-banner,
   .global-prog{display:none!important;}
 
@@ -2544,7 +2545,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
   </div>
 
   <!-- HOW TO SHARE NOTE -->
-  <div style="background:#F0F7E8;border-left:4px solid #6BA83A;padding:14px 44px;display:flex;align-items:center;gap:14px;font-size:12px;color:#2D5016;">
+  <div class="no-print" style="background:#F0F7E8;border-left:4px solid #6BA83A;padding:14px 44px;display:flex;align-items:center;gap:14px;font-size:12px;color:#2D5016;">
     <span style="font-size:20px;">📤</span>
     <span><strong style="color:#1B3A6B;">To save as PDF:</strong> Click <strong>Save as PDF</strong> above → the browser print dialog will open → set <strong>Destination</strong> to <strong>Save as PDF</strong> → click <strong>Save</strong>. Then share the PDF file with your FIP Team.</span>
   </div>
