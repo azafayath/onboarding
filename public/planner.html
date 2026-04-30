@@ -2494,6 +2494,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
           <button class="sh-btn csv" onclick="submitPlan()">✅ Submit</button>
           <button class="sh-btn outline" onclick="exportCSV()">⬇ Export CSV</button>
           <button class="sh-btn outline" onclick="savePDF()" style="background:rgba(107,168,58,0.25);border-color:rgba(107,168,58,0.5);">📄 Save as PDF</button>
+          <button class="sh-btn outline" id="downloadPdfBtn" onclick="downloadPDF()" style="background:rgba(27,58,107,0.3);border-color:rgba(99,179,237,0.5);">⬇ Download PDF</button>
         </div>
       </div>
     </div>
@@ -2858,37 +2859,173 @@ window.addEventListener('load',()=>{
 </script>
 
 <script>
-// ─── PDF SAVE ───
-function savePDF() {
-  // Populate the full detail table directly — bypasses the auth-db-bridge wrapper chain
-  const sels = getSelections();
-  const tbody = document.getElementById('fullDetailBody');
-  if (tbody) {
-    tbody.innerHTML = '';
-    let lastPhase = '';
-    let totalCTH = 0;
-    ROWS.forEach(function(r) {
-      const v = sels[r.idx];
-      if (r.phase_name !== lastPhase) {
-        lastPhase = r.phase_name;
-        const pc = PHASE_COLORS[r.phase_id] || {};
-        tbody.innerHTML += '<tr class="phase-row"><td colspan="5">' + (pc.icon || '') + ' ' + r.phase_name + '</td></tr>';
-      }
-      const dpClass = v ? v.toLowerCase().replace(' ', '-') : 'unassigned';
-      const dpLabel = v || 'Unassigned';
-      totalCTH += r.cth;
-      tbody.innerHTML +=
-        '<tr>' +
-        '<td style="color:#8AA0BC;font-size:11px;">' + r.phase_name + '</td>' +
-        '<td>' + r.topic + '</td>' +
-        '<td>' + r.sub + '</td>' +
-        '<td style="text-align:center;"><span class="dp-badge ' + dpClass + '">' + dpLabel + '</span></td>' +
-        '<td style="text-align:center;font-weight:700;">' + (r.cth > 0 ? r.cth + ' hrs' : '—') + '</td>' +
-        '</tr>';
-    });
-    tbody.innerHTML += '<tr class="total-row"><td colspan="3">Program Total</td><td></td><td style="text-align:center;">' + totalCTH + ' hrs</td></tr>';
+// ─── PDF DOWNLOAD (jsPDF) ───
+function downloadPDF() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    // Library not loaded yet — fall back to print dialog
+    window.print();
+    return;
   }
-  window.print();
+
+  const btn = document.getElementById('downloadPdfBtn');
+  if (btn) { btn.textContent = '⏳ Generating…'; btn.disabled = true; }
+
+  setTimeout(function() {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const PW = 297, MARGIN = 14, CW = PW - MARGIN * 2;
+
+      // ── Gather data ──
+      const sels = getSelections();
+      let fipH = 0, almH = 0, fldH = 0, assigned = 0;
+      ROWS.forEach(function(r) {
+        const v = sels[r.idx];
+        if (v) { assigned++; if (v === 'FIP') fipH += r.cth; else if (v === 'Almarai') almH += r.cth; else fldH += r.cth; }
+      });
+      const totalH = fipH + almH + fldH;
+      const name   = (document.getElementById('responderName')  || {}).value || '';
+      const desig  = (document.getElementById('responderDesig') || {}).value || '';
+      const region = (document.getElementById('responderRegion')|| {}).value || '';
+      const date   = (document.getElementById('responderDate')  || {}).value || '';
+      const dateStr = date ? new Date(date).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '';
+      const respInfo = [name, desig, region, dateStr].filter(Boolean).join('  ·  ');
+
+      // ── PAGE 1: SUMMARY ──
+      // Header bar
+      doc.setFillColor(13, 33, 69);
+      doc.rect(0, 0, PW, 26, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('FIP Sales Program — Onboarding Planning Report', MARGIN, 11);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(141, 198, 63);
+      doc.text('FIP × Almarai Partnership Program', MARGIN, 18);
+      if (respInfo) {
+        doc.setTextColor(200, 215, 230);
+        doc.text(respInfo, PW - MARGIN, 18, { align: 'right' });
+      }
+      doc.setFillColor(107, 168, 58);
+      doc.rect(0, 26, PW, 2, 'F');
+
+      // KPI boxes
+      var y = 36;
+      var kpiW = (CW - 6) / 4;
+      var kpis = [
+        { label: 'TOTAL PROGRAM',    val: totalH + ' CTH', sub: (totalH / HPD).toFixed(1) + ' days · ' + assigned + '/73 topics' },
+        { label: 'AT FIP',           val: fipH  + ' CTH', sub: (fipH  / HPD).toFixed(1) + ' days · ' + (totalH > 0 ? Math.round(fipH /totalH*100) : 0) + '%' },
+        { label: 'AT ALMARAI',       val: almH  + ' CTH', sub: (almH  / HPD).toFixed(1) + ' days · ' + (totalH > 0 ? Math.round(almH /totalH*100) : 0) + '%' },
+        { label: 'FIELD TRAINING',   val: fldH  + ' CTH', sub: (fldH  / HPD).toFixed(1) + ' days · ' + (totalH > 0 ? Math.round(fldH /totalH*100) : 0) + '%' }
+      ];
+      kpis.forEach(function(k, i) {
+        var x = MARGIN + i * (kpiW + 2);
+        doc.setFillColor(27, 58, 107);
+        doc.roundedRect(x, y, kpiW, 22, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(141, 198, 63);
+        doc.text(k.label, x + 4, y + 6);
+        doc.setFontSize(14);
+        doc.setTextColor(255, 255, 255);
+        doc.text(k.val, x + 4, y + 15);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(180, 205, 225);
+        doc.text(k.sub, x + 4, y + 21);
+      });
+      y += 30;
+
+      // Phase breakdown table
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(13, 33, 69);
+      doc.text('Phase-by-Phase Breakdown', MARGIN, y);
+      y += 2;
+      doc.setDrawColor(107, 168, 58);
+      doc.setLineWidth(0.5);
+      doc.line(MARGIN, y, PW - MARGIN, y);
+      y += 3;
+
+      var phaseRows = PHASES_DATA.map(function(pd) {
+        var pF = 0, pA = 0, pFl = 0;
+        pd.rows.forEach(function(pair) { var v = sels[pair[0]]; if (v) { if (v==='FIP') pF+=pair[1]; else if (v==='Almarai') pA+=pair[1]; else pFl+=pair[1]; } });
+        var pt = pF + pA + pFl;
+        return [pd.name, pF+' hrs', pA+' hrs', pFl+' hrs', pt+' hrs'];
+      });
+
+      doc.autoTable({
+        startY: y,
+        head: [['Phase', 'At FIP', 'At Almarai', 'Field Training', 'Phase Total']],
+        body: phaseRows,
+        theme: 'grid',
+        headStyles: { fillColor: [27,58,107], textColor: 255, fontSize: 8.5, fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { fontSize: 8.5, textColor: [13,33,69] },
+        alternateRowStyles: { fillColor: [240,247,251] },
+        columnStyles: {
+          0: { fontStyle: 'bold' },
+          1: { halign: 'center', textColor: [74,144,196] },
+          2: { halign: 'center', textColor: [27,58,107] },
+          3: { halign: 'center', textColor: [194,124,10] },
+          4: { halign: 'center', fontStyle: 'bold', textColor: [13,33,69] }
+        },
+        margin: { left: MARGIN, right: MARGIN }
+      });
+
+      // ── PAGE 2: FULL DETAIL TABLE ──
+      doc.addPage();
+      doc.setFillColor(13, 33, 69);
+      doc.rect(0, 0, PW, 20, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Detailed Topic Assignment', MARGIN, 13);
+      doc.setFillColor(107, 168, 58);
+      doc.rect(0, 20, PW, 1.5, 'F');
+
+      var detailRows = ROWS.map(function(r) {
+        var v = sels[r.idx] || 'Unassigned';
+        return [r.phase_name, r.topic, r.sub, v, r.cth > 0 ? r.cth + ' hrs' : '—'];
+      });
+
+      doc.autoTable({
+        startY: 26,
+        head: [['Phase', 'Main Topic', 'Sub Topic', 'Delivery Point', 'CTH']],
+        body: detailRows,
+        theme: 'striped',
+        headStyles: { fillColor: [27,58,107], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8, textColor: [13,33,69] },
+        alternateRowStyles: { fillColor: [244,247,251] },
+        columnStyles: {
+          0: { cellWidth: 34 },
+          1: { cellWidth: 44 },
+          2: { cellWidth: 'auto' },
+          3: { cellWidth: 34, halign: 'center', fontStyle: 'bold' },
+          4: { cellWidth: 18, halign: 'center', fontStyle: 'bold' }
+        },
+        didParseCell: function(data) {
+          if (data.section === 'body' && data.column.index === 3) {
+            var dp = data.cell.raw;
+            if (dp === 'FIP')           data.cell.styles.textColor = [74,144,196];
+            else if (dp === 'Almarai')  data.cell.styles.textColor = [27,58,107];
+            else if (dp === 'Field Training') data.cell.styles.textColor = [194,124,10];
+            else                        data.cell.styles.textColor = [148,160,188];
+          }
+        },
+        margin: { left: MARGIN, right: MARGIN }
+      });
+
+      // Save
+      doc.save('FIP_Almarai_Onboarding_' + new Date().toISOString().split('T')[0] + '.pdf');
+
+    } catch(e) {
+      console.error('PDF generation failed:', e);
+      window.print();
+    } finally {
+      if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+    }
+  }, 50);
 }
 
 function submitPlan() {
@@ -2956,6 +3093,8 @@ function doReset() {
   }
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="/auth-db-bridge.js"></script>
 </body>
 </html>
