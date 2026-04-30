@@ -2894,15 +2894,12 @@ function downloadPDF() {
       const region = (document.getElementById('responderRegion')|| {}).value || '';
       const date   = (document.getElementById('responderDate')  || {}).value || '';
       const dateStr = date ? new Date(date).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '';
-      const respLine1Parts = [];
-      if (name)  respLine1Parts.push('Name: ' + name);
-      if (desig) respLine1Parts.push('Designation: ' + desig);
-      const respLine1 = respLine1Parts.join('  ·  ');
-
-      const respLine2Parts = [];
-      if (region)  respLine2Parts.push('Region: ' + region);
-      if (dateStr) respLine2Parts.push('Date: ' + dateStr);
-      const respLine2 = respLine2Parts.join('  ·  ');
+      const respFields = [
+        name    ? 'Name: '        + name    : null,
+        desig   ? 'Designation: ' + desig   : null,
+        region  ? 'Region: '      + region  : null,
+        dateStr ? 'Date: '        + dateStr : null
+      ].filter(Boolean);
       const todayStr = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 
       // ── PAGE 1: SUMMARY ──
@@ -2932,11 +2929,16 @@ function downloadPDF() {
       doc.setTextColor(141, 198, 63);
       doc.text('FIP × Almarai Partnership Program', textStartX, 26);
 
-      // Responder info (right-aligned, two lines)
-      doc.setTextColor(200, 215, 230);
-      doc.setFontSize(7.5);
-      if (respLine1) doc.text(respLine1, PW - MARGIN, 19, { align: 'right' });
-      if (respLine2) doc.text(respLine2, PW - MARGIN, 26, { align: 'right' });
+      // Responder info — one line per field, right-aligned, vertically centred in header
+      if (respFields.length > 0) {
+        doc.setTextColor(200, 215, 230);
+        doc.setFontSize(7);
+        var rLineH = 5.5;
+        var rStartY = (HDR_H - (respFields.length - 1) * rLineH) / 2 + 1;
+        respFields.forEach(function(line, i) {
+          doc.text(line, PW - MARGIN, rStartY + i * rLineH, { align: 'right' });
+        });
+      }
 
       // Green accent stripe
       doc.setFillColor(107, 168, 58);
