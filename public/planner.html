@@ -36,18 +36,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
 /* ─── HEADER ─── */
 .hdr{background:linear-gradient(160deg,var(--navy-dark) 0%,var(--navy) 60%,#1E4080 100%);padding:0;position:relative;overflow:hidden;}
 .hdr::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 70% 50%,rgba(107,168,58,0.08) 0%,transparent 70%);pointer-events:none;}
-.hdr-inner{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:24px 44px;position:relative;z-index:1;gap:16px;}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;padding:24px 44px;position:relative;z-index:1;gap:24px;}
 .hdr-logos{display:flex;align-items:center;gap:20px;flex-shrink:0;}
 .logo-box{background:white;border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.2);}
-.logo-box img{height:56px;max-width:180px;width:auto;display:block;object-fit:contain;}
+.logo-box img{height:52px;width:auto;display:block;}
 .logo-sep{width:1px;height:52px;background:rgba(255,255,255,0.2);}
-.hdr-titles{text-align:center;flex:1 1 100%;order:2;}
+.hdr-titles{text-align:center;flex:1;}
 .hdr-eyebrow{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--green-light);margin-bottom:6px;}
 .hdr-h1{font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:white;letter-spacing:-0.3px;line-height:1.15;}
-.hdr-sub{font-size:13px;color:rgba(255,255,255,0.82);margin-top:8px;letter-spacing:0.3px;min-height:36px;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;}
-.hdr-right{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;min-width:0;width:100%;order:3;}
-.responder-fields{display:flex;flex-direction:row;gap:8px;flex-wrap:nowrap;}
-.hdr-input{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.22);border-radius:6px;color:white;font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 12px;width:148px;outline:none;transition:border 0.2s;}
+.hdr-sub{font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px;letter-spacing:0.3px;}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
+.responder-fields{display:flex;flex-direction:column;gap:6px;}
+.hdr-input{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.22);border-radius:6px;color:white;font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 12px;width:210px;outline:none;transition:border 0.2s;}
 .hdr-input::placeholder{color:rgba(255,255,255,0.4);}
 .hdr-input:focus{border-color:var(--green-light);background:rgba(255,255,255,0.15);}
 .save-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:0.3px;align-self:flex-end;}
@@ -307,9 +307,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
     <h3>Instructions to Fill</h3>
     <p>For each sub-topic listed in the phases below, select <strong>one delivery point</strong> to indicate where that topic will be delivered. Work through each phase using the left sidebar. All selections are <strong>automatically saved</strong> in your browser — you can close and return at any time without losing your work.</p>
     <div class="instr-pills">
-      <span class="instr-pill fip">🏛 FIP — Delivered at Food Industries Polytechnic, Al-Kharj</span>
-      <span class="instr-pill almarai">🏢 Almarai — Delivered internally by Almarai</span>
-      <span class="instr-pill field">🚗 Field Training — On-the-job, field-based delivery</span>
+      <span class="instr-pill fip">🏛 FIP — Delivered at Food Industries Polytechnic Site</span>
+      <span class="instr-pill almarai">🏢 Almarai — Delivered at Almarai Premises by FIP Trainers (Blended, Face to Face or online)</span>
+      <span class="instr-pill field">🚗 Field Based Training — On-the-Job, field based delivery</span>
     </div>
     <p style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.5);">Once all phases are complete, click <strong style="color:white;">View Summary &amp; Export</strong> to review the full plan. Use <strong style="color:white;">Save as PDF</strong> to download the summary report, then share the PDF file directly with FIP.</p>
   </div>
@@ -2829,8 +2829,20 @@ function savePDF() {
   buildSummary();
   const tip = document.createElement('div');
   tip.id = 'pdfTip';
-  tip.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0D2145;color:white;padding:24px 30px;border-radius:14px;font-size:13px;z-index:99999;box-shadow:0 12px 48px rgba(0,0,0,0.5);text-align:center;max-width:400px;line-height:1.7;border:1px solid rgba(255,255,255,0.1);';
-  tip.innerHTML = '<div style="font-size:28px;margin-bottom:8px;">📄</div><strong style="font-size:15px;display:block;margin-bottom:10px;font-family:Playfair Display,serif;">Save Summary as PDF</strong><div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;text-align:left;line-height:1.9;"><span style="color:#8DC63F;font-weight:700;">1.</span> Click <strong>Open Print Dialog</strong> below<br><span style="color:#8DC63F;font-weight:700;">2.</span> In the dialog, set <strong>Destination → Save as PDF</strong><br><span style="color:#8DC63F;font-weight:700;">3.</span> Set <strong>Layout → Landscape</strong> for best results<br><span style="color:#8DC63F;font-weight:700;">4.</span> Click <strong>Save</strong> — share the PDF file with FIP</div><div style="display:flex;gap:8px;justify-content:center;"><button onclick="document.getElementById(\'pdfTip\').remove();window.print();" style="background:#6BA83A;color:white;border:none;padding:10px 22px;border-radius:7px;font-weight:700;cursor:pointer;font-size:12px;font-family:DM Sans,sans-serif;">Open Print Dialog →</button><button onclick="document.getElementById(\'pdfTip\').remove();" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.25);padding:10px 16px;border-radius:7px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;">Cancel</button></div>';
+  tip.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0D2145;color:white;padding:28px 32px;border-radius:14px;font-size:13px;z-index:99999;box-shadow:0 12px 48px rgba(0,0,0,0.5);text-align:center;max-width:420px;width:90%;line-height:1.7;border:1px solid rgba(255,255,255,0.12);';
+  tip.innerHTML = '<div style="font-size:32px;margin-bottom:10px;">📄</div>'
+    + '<strong style="font-size:16px;display:block;margin-bottom:12px;font-family:Playfair Display,serif;">Save Summary as PDF</strong>'
+    + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:14px 16px;margin-bottom:18px;font-size:12px;text-align:left;line-height:2;">'
+    + '<span style="color:#8DC63F;font-weight:700;">1.</span> Click <strong>Open Print Dialog</strong> below<br>'
+    + '<span style="color:#8DC63F;font-weight:700;">2.</span> In the print dialog, set <strong>Destination → Save as PDF</strong><br>'
+    + '<span style="color:#8DC63F;font-weight:700;">3.</span> Set <strong>Layout → Landscape</strong> for best results<br>'
+    + '<span style="color:#8DC63F;font-weight:700;">4.</span> Click the <strong>Save</strong> button and choose where to save the file<br>'
+    + '<span style="color:#8DC63F;font-weight:700;">5.</span> Share the saved PDF file with your FIP program coordinator'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;justify-content:center;">'
+    + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();setTimeout(()=>window.print(),150);" style="background:#6BA83A;color:white;border:none;padding:11px 24px;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:DM Sans,sans-serif;">Open Print Dialog →</button>'
+    + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.25);padding:11px 18px;border-radius:7px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;">Cancel</button>'
+    + '</div>';
   document.body.appendChild(tip);
 }
 
