@@ -2859,7 +2859,7 @@ window.addEventListener('load',()=>{
 <script>
 // ─── PDF SAVE ───
 function savePDF() {
-  buildSummary();   // ensure both KPI cards and full detail table are populated
+  try { buildSummary(); } catch(e) {}
   window.print();
 }
 
