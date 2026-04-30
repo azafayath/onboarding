@@ -2462,9 +2462,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
         <button class="sh-back-btn" onclick="hideSummaryPage()">← Back to Planning Form</button>
         <div class="sh-export-btns">
           <button class="sh-btn outline" onclick="resetAll()" style="background:rgba(197,48,48,0.2);border-color:rgba(197,48,48,0.4);">↺ Reset</button>
-          <button class="sh-btn outline" onclick="window.print()">🖨 Print</button>
           <button class="sh-btn csv" onclick="submitPlan()">✅ Submit</button>
-          <button class="sh-btn outline" onclick="savePDF()" style="background:rgba(107,168,58,0.25);border-color:rgba(107,168,58,0.5);">📄 Save as PDF</button>
+          <button class="sh-btn outline" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="sh-btn outline" onclick="window.print()" style="background:rgba(107,168,58,0.25);border-color:rgba(107,168,58,0.5);">📄 Save as PDF</button>
         </div>
       </div>
     </div>
@@ -2518,7 +2518,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
   <!-- HOW TO SHARE NOTE -->
   <div style="background:#F0F7E8;border-left:4px solid #6BA83A;padding:14px 44px;display:flex;align-items:center;gap:14px;font-size:12px;color:#2D5016;">
     <span style="font-size:20px;">📤</span>
-    <span><strong style="color:#1B3A6B;">To share with FIP:</strong> Click <strong>Save as PDF</strong> above to download this summary report as a PDF file, then send the PDF to your FIP program coordinator via email or WhatsApp. No online submission is required.</span>
+    <span><strong style="color:#1B3A6B;">To save as PDF:</strong> Click <strong>Save as PDF</strong> above → the browser print dialog will open → set <strong>Destination</strong> to <strong>Save as PDF</strong> → click <strong>Save</strong>. Then share the PDF file with your FIP program coordinator via email or WhatsApp.</span>
   </div>
 
   <div class="summary-body">
@@ -2823,59 +2823,7 @@ window.addEventListener('load',()=>{
 <script>
 // ─── PDF SAVE ───
 function savePDF() {
-  if (!sel('summaryPage').classList.contains('active')) {
-    showSummaryPage();
-  }
-  buildSummary();
-
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const isIOS    = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  const existing = document.getElementById('pdfTip');
-  if (existing) existing.remove();
-
-  const tip = document.createElement('div');
-  tip.id = 'pdfTip';
-  tip.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0D2145;color:white;padding:28px 32px;border-radius:14px;font-size:13px;z-index:99999;box-shadow:0 12px 48px rgba(0,0,0,0.5);text-align:center;max-width:440px;width:92%;line-height:1.7;border:1px solid rgba(255,255,255,0.12);';
-
-  if (isMobile) {
-    // window.print() is silently unsupported on iOS Chrome and in-app browsers.
-    // Give the user two guaranteed options: CSV download + browser print instructions.
-    const osStep = isIOS
-      ? 'Tap the <strong>Share ↑</strong> icon in Safari, then choose <strong>Print</strong>. Pinch out on the preview to save as PDF.'
-      : 'Tap the <strong>⋮ Menu</strong> in Chrome, choose <strong>Print</strong>, then set destination to <strong>Save as PDF</strong>.';
-
-    tip.innerHTML = '<div style="font-size:30px;margin-bottom:10px;">📱</div>'
-      + '<strong style="font-size:15px;display:block;margin-bottom:12px;font-family:Playfair Display,serif;">Save on Mobile</strong>'
-      + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;text-align:left;line-height:1.9;">'
-      + '<div style="color:#8DC63F;font-weight:700;margin-bottom:4px;">OPTION 1 — Print to PDF</div>'
-      + osStep
-      + '<div style="color:#8DC63F;font-weight:700;margin:10px 0 4px;">OPTION 2 — Download CSV</div>'
-      + 'Download the data as a spreadsheet and share it directly.'
-      + '</div>'
-      + '<div style="display:flex;flex-direction:column;gap:8px;">'
-      + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();window.print();" style="background:#6BA83A;color:white;border:none;padding:12px;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:DM Sans,sans-serif;width:100%;">🖨 Try Print / PDF</button>'
-      + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();exportCSV();" style="background:#2B6CB0;color:white;border:none;padding:12px;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:DM Sans,sans-serif;width:100%;">⬇ Download CSV Report</button>'
-      + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2);padding:10px;border-radius:7px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;width:100%;">Cancel</button>'
-      + '</div>';
-  } else {
-    // Desktop: step-by-step print dialog instructions
-    tip.innerHTML = '<div style="font-size:32px;margin-bottom:10px;">📄</div>'
-      + '<strong style="font-size:16px;display:block;margin-bottom:12px;font-family:Playfair Display,serif;">Save Summary as PDF</strong>'
-      + '<div style="background:rgba(255,255,255,0.07);border-radius:8px;padding:14px 16px;margin-bottom:18px;font-size:12px;text-align:left;line-height:2;">'
-      + '<span style="color:#8DC63F;font-weight:700;">1.</span> Click <strong>Open Print Dialog</strong> below<br>'
-      + '<span style="color:#8DC63F;font-weight:700;">2.</span> In the print dialog, set <strong>Destination → Save as PDF</strong><br>'
-      + '<span style="color:#8DC63F;font-weight:700;">3.</span> Set <strong>Layout → Landscape</strong> for best results<br>'
-      + '<span style="color:#8DC63F;font-weight:700;">4.</span> Click the <strong>Save</strong> button and choose where to save the file<br>'
-      + '<span style="color:#8DC63F;font-weight:700;">5.</span> Share the saved PDF file with your FIP program coordinator'
-      + '</div>'
-      + '<div style="display:flex;gap:8px;justify-content:center;">'
-      + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();window.print();" style="background:#6BA83A;color:white;border:none;padding:11px 24px;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:DM Sans,sans-serif;">Open Print Dialog →</button>'
-      + '<button onclick="const t=document.getElementById(\'pdfTip\');if(t)t.remove();" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.25);padding:11px 18px;border-radius:7px;font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;">Cancel</button>'
-      + '</div>';
-  }
-
-  document.body.appendChild(tip);
+  window.print();
 }
 
 function submitPlan() {
