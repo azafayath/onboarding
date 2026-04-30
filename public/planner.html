@@ -247,23 +247,44 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
   .print-only{display:none!important;}
 }
 @media print{
-  /* Hide everything, then show only the summary page */
+  @page{margin:14mm 12mm;}
+
+  /* Isolate: hide everything, show only the summary page */
   body > *{display:none!important;}
   #summaryPage{display:block!important;}
-  /* Hide UI controls within the summary */
+
+  /* Hide interactive UI controls */
   #summaryPage .sh-back-btn,
   #summaryPage .sh-export-btns,
-  #summaryPage .warn-bar{display:none!important;}
-  /* Show the print-only detail table */
-  .print-only{display:block!important;}
-  /* Preserve colours */
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .summary-hero{background:linear-gradient(160deg,#0D2145,#1B3A6B)!important;}
-  .dist-strip{background:#0D2145!important;}
-  .kpi-card{background:rgba(255,255,255,0.08)!important;}
+  #summaryPage .warn-bar,
+  .instr-banner,
+  .global-prog{display:none!important;}
+
+  /* PAGE 1 — Summary: KPIs, distribution, phase breakdown */
+  .summary-hero{background:linear-gradient(160deg,#0D2145,#1B3A6B)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .dist-strip{background:#0D2145!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .kpi-card{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .kpi-grid{grid-template-columns:repeat(4,1fr)!important;}
+  .phase-breakdown-grid{grid-template-columns:repeat(3,1fr)!important;}
+  .summary-body{padding:16px 24px;}
+
+  /* Force page break before PAGE 2 — Full detail table */
+  .print-only{display:block!important;page-break-before:always;break-before:page;}
+
+  /* Full detail table print styles */
+  .full-table-wrap{box-shadow:none!important;border:1px solid #ccc!important;}
+  .full-table{width:100%;border-collapse:collapse;font-size:11px;}
+  .full-table thead th{background:#1B3A6B!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:7px 10px;font-size:10px;}
+  .full-table tbody td{padding:6px 10px;border-bottom:1px solid #e0e0e0;font-size:11px;}
+  .full-table .phase-row td{background:#1B3A6B!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:6px 10px;}
+  .full-table .total-row td{background:#f0f0f0!important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .dp-badge{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .dp-badge.fip{background:#EBF8FF!important;color:#2B6CB0!important;}
+  .dp-badge.almarai{background:#EBF0FF!important;color:#1B3A6B!important;}
+  .dp-badge.field-training{background:#FFFBF0!important;color:#C27C0A!important;}
+  .dp-badge.unassigned{background:#f0f0f0!important;color:#888!important;}
+
   body{font-size:12px;}
-  .full-table tbody td{padding:7px 12px;}
-  .summary-body{padding:20px;}
 }
 
 /* ─── TOOLTIP ─── */
@@ -2471,7 +2492,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
           <button class="sh-btn outline" onclick="resetAll()" style="background:rgba(197,48,48,0.2);border-color:rgba(197,48,48,0.4);">↺ Reset</button>
           <button class="sh-btn csv" onclick="submitPlan()">✅ Submit</button>
           <button class="sh-btn outline" onclick="exportCSV()">⬇ Export CSV</button>
-          <button class="sh-btn outline" onclick="window.print()" style="background:rgba(107,168,58,0.25);border-color:rgba(107,168,58,0.5);">📄 Save as PDF</button>
+          <button class="sh-btn outline" onclick="savePDF()" style="background:rgba(107,168,58,0.25);border-color:rgba(107,168,58,0.5);">📄 Save as PDF</button>
         </div>
       </div>
     </div>
@@ -2537,7 +2558,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text
 
     <!-- Full detail table -->
     <div class="print-only">
-    <div class="section-title" style="margin-top:8px;page-break-before:always;">📋 Detailed Topic Assignment</div>
+    <div class="section-title" style="margin-top:8px;">📋 Detailed Topic Assignment</div>
     <div class="full-table-wrap">
       <table class="full-table" id="fullDetailTable">
         <thead>
@@ -2838,6 +2859,7 @@ window.addEventListener('load',()=>{
 <script>
 // ─── PDF SAVE ───
 function savePDF() {
+  buildSummary();   // ensure both KPI cards and full detail table are populated
   window.print();
 }
 
