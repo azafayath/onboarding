@@ -2859,7 +2859,34 @@ window.addEventListener('load',()=>{
 <script>
 // ─── PDF SAVE ───
 function savePDF() {
-  try { buildSummary(); } catch(e) {}
+  // Populate the full detail table directly — bypasses the auth-db-bridge wrapper chain
+  const sels = getSelections();
+  const tbody = document.getElementById('fullDetailBody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    let lastPhase = '';
+    let totalCTH = 0;
+    ROWS.forEach(function(r) {
+      const v = sels[r.idx];
+      if (r.phase_name !== lastPhase) {
+        lastPhase = r.phase_name;
+        const pc = PHASE_COLORS[r.phase_id] || {};
+        tbody.innerHTML += '<tr class="phase-row"><td colspan="5">' + (pc.icon || '') + ' ' + r.phase_name + '</td></tr>';
+      }
+      const dpClass = v ? v.toLowerCase().replace(' ', '-') : 'unassigned';
+      const dpLabel = v || 'Unassigned';
+      totalCTH += r.cth;
+      tbody.innerHTML +=
+        '<tr>' +
+        '<td style="color:#8AA0BC;font-size:11px;">' + r.phase_name + '</td>' +
+        '<td>' + r.topic + '</td>' +
+        '<td>' + r.sub + '</td>' +
+        '<td style="text-align:center;"><span class="dp-badge ' + dpClass + '">' + dpLabel + '</span></td>' +
+        '<td style="text-align:center;font-weight:700;">' + (r.cth > 0 ? r.cth + ' hrs' : '—') + '</td>' +
+        '</tr>';
+    });
+    tbody.innerHTML += '<tr class="total-row"><td colspan="3">Program Total</td><td></td><td style="text-align:center;">' + totalCTH + ' hrs</td></tr>';
+  }
   window.print();
 }
 
